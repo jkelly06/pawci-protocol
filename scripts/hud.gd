@@ -1,4 +1,6 @@
 extends CanvasLayer
+var touch_layer: Control
+var map_view: Control
 var root: Control
 var stats: Label
 var objective: Label
@@ -36,9 +38,11 @@ func _ready():
  layer=2
  process_mode=Node.PROCESS_MODE_ALWAYS
  root=Control.new()
- root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ root.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
  root.mouse_filter=Control.MOUSE_FILTER_IGNORE
  add_child(root)
+ root.size=get_viewport().get_visible_rect().size
+ get_viewport().size_changed.connect(func(): root.size=get_viewport().get_visible_rect().size)
  var bar=ColorRect.new()
  bar.color=Color("10232e")
  bar.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -48,7 +52,7 @@ func _ready():
  stats=label_at("",Vector2(0,1),Vector2(16,-52),22)
  objective=label_at("",Vector2(0,1),Vector2(16,-25),13)
  label_at("PAWCI PROTOCOL   /   01 CONTAINMENT",Vector2.ZERO,Vector2(16,12),17)
- label_at("WASD move  •  SHIFT sprint  •  SPACE jump  •  E use  •  R reload",Vector2.ZERO,Vector2(16,35),12)
+ var help=label_at("WASD move  •  SHIFT sprint  •  SPACE jump  •  E use  •  R reload",Vector2.ZERO,Vector2(16,35),12)
  toast=label_at("",Vector2(0,0.15),Vector2(16,0),17)
  subtitles=label_at("",Vector2(0,1),Vector2(16,-103),15)
  subtitles.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
@@ -87,12 +91,22 @@ func _ready():
  column.add_child(quit)
  panel.hide()
  mobile=DisplayServer.is_touchscreen_available() or OS.has_feature("mobile") or "--touch" in OS.get_cmdline_user_args()
- if mobile: build_touch()
+ map_view=preload("res://scripts/minimap.gd").new()
+ root.add_child(map_view)
+ map_view.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+ map_view.position=Vector2(root.size.x-180,12)
+ map_view.size=Vector2(164,212)
+ if OS.has_feature("web"):
+  mobile=mobile or bool(JavaScriptBridge.eval("navigator.maxTouchPoints > 0"))
+ if mobile:
+  help.text="LEFT PAD move  /  DRAG RIGHT look  /  MAP top right"
+  build_touch()
+ root.move_child(panel,-1)
  if OS.has_feature("web"):
   get_tree().paused=true
   Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
   panel.show()
-  panel_title.text="PAWCI PROTOCOL\nTurn phone sideways to play"
+  panel_title.text="PAWCI PROTOCOL\nTap START GAME to play"
   resume_button.text="START GAME"
  Game.changed.connect(refresh)
  refresh()
@@ -111,6 +125,10 @@ func _process(dt):
  toast.visible=toast_timer>0
  subtitles.visible=subtitle_timer>0
  subtitles.size.x=root.size.x-32
+ if is_instance_valid(touch_layer): touch_layer.visible=not get_tree().paused
+ if is_instance_valid(map_view):
+  map_view.position=Vector2(root.size.x-180,12)
+  map_view.visible=not get_tree().paused
  refresh()
 func message(text:String):
  toast.text=text
@@ -118,6 +136,13 @@ func message(text:String):
 func subtitle(text:String):
  subtitles.text=text
  subtitle_timer=8
+func _input(event):
+ # Release tracked fingers even when they end over a UI button.
+ if event is InputEventScreenTouch and not event.pressed and is_instance_valid(Game.player):
+  if event.index==move_id:
+   move_id=-1
+   Game.player.touch_move=Vector2.ZERO
+  if event.index==look_id: look_id=-1
 func _unhandled_input(event):
  if event.is_action_pressed("pause") and Game.health>0 and not Game.finished: toggle_pause()
  if not mobile or get_tree().paused: return
@@ -152,15 +177,24 @@ func end_screen(won:bool):
  resume_button.hide()
  panel_title.text=("CONTAINMENT WING CLEARED\nLEVEL COMPLETE" if won else "NINE LIVES. ZERO REMAINING.\nRESEARCH SUBJECT LOST")+"\n%d kills • %02d:%02d • Secret %s" % [Game.kills,int(Game.elapsed)/60,int(Game.elapsed)%60,"YES" if Game.secret else "NO"]
 func build_touch():
- label_at("DRAG TO MOVE",Vector2(0,1),Vector2(22,-145),14)
+ touch_layer=Control.new()
+ root.add_child(touch_layer)
+ touch_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ touch_layer.mouse_filter=Control.MOUSE_FILTER_IGNORE
+ # Controls sit inward, around the middle height, leaving the reticle clear.
  var actions=["FIRE","USE","RELOAD","JUMP","PAUSE"]
+ var offsets=[Vector2(0,0),Vector2(96,0),Vector2(0,62),Vector2(96,62),Vector2(48,124)]
  for i in actions.size():
   var button=Button.new()
+  touch_layer.add_child(button)
   button.text=actions[i]
-  button.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-  button.position=Vector2(-100,-125-i*55)
-  button.size=Vector2(90,48)
-  root.add_child(button)
+  button.anchor_left=0.62
+  button.anchor_top=0.45
+  button.anchor_right=0.62
+  button.anchor_bottom=0.45
+  button.position=Vector2(root.size.x*0.62,root.size.y*0.45)+offsets[i]
+  button.size=Vector2(90,54)
+  button.modulate=Color(1,1,1,0.8)
   if i==0:
    button.button_down.connect(func(): Game.player.touch_fire=true)
    button.button_up.connect(func(): Game.player.touch_fire=false)
@@ -171,3 +205,12 @@ func build_touch():
     if Game.player.is_on_floor(): Game.player.velocity.y=6
    )
   else: button.pressed.connect(toggle_pause)
+ var pad=preload("res://scripts/minimap.gd").new()
+ pad.joystick=true
+ touch_layer.add_child(pad)
+ pad.anchor_left=0.28
+ pad.anchor_right=0.28
+ pad.anchor_top=0.59
+ pad.anchor_bottom=0.59
+ pad.position=Vector2(root.size.x*0.28-60,root.size.y*0.59-60)
+ pad.size=Vector2(120,120)
