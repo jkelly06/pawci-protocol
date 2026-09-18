@@ -24,7 +24,8 @@ func _ready():
  camera.current=true
  weapon=preload("res://scenes/weapons/TunaBlaster.tscn").instantiate()
  camera.add_child(weapon)
- Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
+ if not OS.has_feature("web") and not DisplayServer.is_touchscreen_available():
+  Input.mouse_mode=Input.MOUSE_MODE_CAPTURED
 func look(delta: Vector2):
  rotate_y(-delta.x*0.0025)
  camera.rotation.x=clampf(camera.rotation.x-delta.y*0.0025,-1.25,1.25)

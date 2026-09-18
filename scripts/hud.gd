@@ -20,6 +20,7 @@ var move_origin := Vector2.ZERO
 func label_at(text:String,anchor:Vector2,offset:Vector2,font_size:int) -> Label:
  var label=Label.new()
  label.text=text
+ label.mouse_filter=Control.MOUSE_FILTER_IGNORE
  label.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
  label.anchor_left=anchor.x
  label.anchor_right=anchor.x
@@ -81,11 +82,18 @@ func _ready():
  column.add_child(restart)
  var quit=Button.new()
  quit.text="QUIT"
+ quit.visible=not OS.has_feature("web")
  quit.pressed.connect(func(): get_tree().quit())
  column.add_child(quit)
  panel.hide()
- mobile=OS.has_feature("mobile") or "--touch" in OS.get_cmdline_user_args()
+ mobile=DisplayServer.is_touchscreen_available() or OS.has_feature("mobile") or "--touch" in OS.get_cmdline_user_args()
  if mobile: build_touch()
+ if OS.has_feature("web"):
+  get_tree().paused=true
+  Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
+  panel.show()
+  panel_title.text="PAWCI PROTOCOL\nTurn phone sideways to play"
+  resume_button.text="START GAME"
  Game.changed.connect(refresh)
  refresh()
 func refresh():
@@ -131,7 +139,10 @@ func toggle_pause():
  get_tree().paused=not get_tree().paused
  panel.visible=get_tree().paused
  panel_title.text="PAWCI PROTOCOL\nPAUSED"
- Input.mouse_mode=Input.MOUSE_MODE_VISIBLE if get_tree().paused else Input.MOUSE_MODE_CAPTURED
+ resume_button.text="RESUME"
+ move_id=-1
+ look_id=-1
+ Input.mouse_mode=Input.MOUSE_MODE_VISIBLE if get_tree().paused or mobile else Input.MOUSE_MODE_CAPTURED
  Game.player.touch_fire=false
  Game.player.touch_move=Vector2.ZERO
 func end_screen(won:bool):
@@ -142,7 +153,7 @@ func end_screen(won:bool):
  panel_title.text=("CONTAINMENT WING CLEARED\nLEVEL COMPLETE" if won else "NINE LIVES. ZERO REMAINING.\nRESEARCH SUBJECT LOST")+"\n%d kills • %02d:%02d • Secret %s" % [Game.kills,int(Game.elapsed)/60,int(Game.elapsed)%60,"YES" if Game.secret else "NO"]
 func build_touch():
  label_at("DRAG TO MOVE",Vector2(0,1),Vector2(22,-145),14)
- var actions=["FIRE","USE","RELOAD","PAUSE"]
+ var actions=["FIRE","USE","RELOAD","JUMP","PAUSE"]
  for i in actions.size():
   var button=Button.new()
   button.text=actions[i]
@@ -155,4 +166,8 @@ func build_touch():
    button.button_up.connect(func(): Game.player.touch_fire=false)
   elif i==1: button.pressed.connect(func(): Game.player.interact())
   elif i==2: button.pressed.connect(func(): Game.player.weapon.reload())
+  elif i==3:
+   button.pressed.connect(func():
+    if Game.player.is_on_floor(): Game.player.velocity.y=6
+   )
   else: button.pressed.connect(toggle_pause)
