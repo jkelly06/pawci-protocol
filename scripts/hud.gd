@@ -102,12 +102,13 @@ func _ready():
   help.text="LEFT PAD move  /  DRAG RIGHT look  /  MAP top right"
   build_touch()
  root.move_child(panel,-1)
- if OS.has_feature("web"):
+ if OS.has_feature("web") and not Game.skip_start_screen:
   get_tree().paused=true
   Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
   panel.show()
   panel_title.text="PAWCI PROTOCOL\nTap START GAME to play"
   resume_button.text="START GAME"
+ Game.skip_start_screen=false
  Game.changed.connect(refresh)
  refresh()
 func refresh():

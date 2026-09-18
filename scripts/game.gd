@@ -1,5 +1,7 @@
 extends Node
 signal changed
+var restarting := false
+var skip_start_screen := false
 var player
 var level
 var hud
@@ -35,8 +37,18 @@ func reset():
  elapsed=0
  get_tree().paused=false
 func restart():
+ if restarting: return
+ restarting=true
+ skip_start_screen=true
+ # Reload after the button's input callback has finished.
+ call_deferred("_restart_scene")
+func _restart_scene():
  reset()
- get_tree().reload_current_scene()
+ var result=get_tree().reload_current_scene()
+ restarting=false
+ if result!=OK:
+  skip_start_screen=false
+  push_error("Unable to reload containment: %s" % result)
 func message(s: String):
  if is_instance_valid(hud): hud.message(s)
 func hurt(amount: int):
