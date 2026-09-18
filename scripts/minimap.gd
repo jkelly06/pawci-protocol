@@ -23,8 +23,8 @@ func _draw():
  for cell in Game.level.blocked:
   draw_rect(Rect2(origin+Vector2(cell)*scale_factor,Vector2.ONE*scale_factor),Color(1,0.55,0.25))
  if not Game.red_key:
-  draw_circle(origin+(Vector2(27,3)+Vector2.ONE*0.5)*scale_factor,3,Color.RED)
- draw_rect(Rect2(origin+Vector2(9,37)*scale_factor,Vector2(5,5)),Color.GREEN)
+  draw_circle(origin+(Game.level.key_cell+Vector2.ONE*0.5)*scale_factor,3,Color.RED)
+ draw_rect(Rect2(origin+Game.level.exit_cell*scale_factor,Vector2(5,5)),Color.GREEN)
  if is_instance_valid(Game.player):
   var pos=origin+(Vector2(Game.player.position.x,Game.player.position.z)/3.0+Vector2.ONE*0.5)*scale_factor
   var facing=Vector2(-sin(Game.player.rotation.y),-cos(Game.player.rotation.y))

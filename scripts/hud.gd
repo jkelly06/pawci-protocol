@@ -11,6 +11,7 @@ var shade: ColorRect
 var panel: PanelContainer
 var panel_title: Label
 var resume_button: Button
+var next_button: Button
 var flash := 0.0
 var hit_timer := 0.0
 var toast_timer := 0.0
@@ -51,7 +52,7 @@ func _ready():
  root.add_child(bar)
  stats=label_at("",Vector2(0,1),Vector2(16,-52),22)
  objective=label_at("",Vector2(0,1),Vector2(16,-25),13)
- label_at("PAWCI PROTOCOL   /   01 CONTAINMENT",Vector2.ZERO,Vector2(16,12),17)
+ label_at("PAWCI PROTOCOL   /   "+("01 CONTAINMENT" if Game.level_number==1 else "02 REACTOR DEPTHS"),Vector2.ZERO,Vector2(16,12),17)
  var help=label_at("WASD move  •  SHIFT sprint  •  SPACE jump  •  E use  •  R reload",Vector2.ZERO,Vector2(16,35),12)
  toast=label_at("",Vector2(0,0.15),Vector2(16,0),17)
  subtitles=label_at("",Vector2(0,1),Vector2(16,-103),15)
@@ -81,9 +82,14 @@ func _ready():
  resume_button.pressed.connect(toggle_pause)
  column.add_child(resume_button)
  var restart=Button.new()
- restart.text="RESTART CONTAINMENT"
+ restart.text="RESTART LEVEL"
  restart.pressed.connect(func(): Game.restart())
  column.add_child(restart)
+ next_button=Button.new()
+ next_button.text="TAKE ELEVATOR TO LEVEL 2"
+ next_button.pressed.connect(func(): Game.next_level())
+ next_button.hide()
+ column.add_child(next_button)
  var quit=Button.new()
  quit.text="QUIT"
  quit.visible=not OS.has_feature("web")
@@ -114,7 +120,7 @@ func _ready():
 func refresh():
  stats.add_theme_font_size_override("font_size", 16 if root.size.x<650 else 22)
  stats.text="HP %03d     AMMO %02d / %03d     KEY %s" % [Game.health,Game.magazine,Game.reserve,"RED" if Game.red_key else "—"]
- objective.text="LEVEL 1   |   HOSTILES %d   |   %s" % [get_tree().get_nodes_in_group("enemies").size(),"REACH THE ELEVATOR" if Game.red_key else "FIND RED SECURITY KEY"]
+ objective.text="LEVEL %d   |   HOSTILES %d   |   %s" % [Game.level_number,get_tree().get_nodes_in_group("enemies").size(),"REACH THE ELEVATOR" if Game.red_key else "FIND RED SECURITY KEY"]
 func _process(dt):
  flash=maxf(0,flash-dt)
  hit_timer=maxf(0,hit_timer-dt)
@@ -176,7 +182,8 @@ func end_screen(won:bool):
  Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
  panel.show()
  resume_button.hide()
- panel_title.text=("CONTAINMENT WING CLEARED\nLEVEL COMPLETE" if won else "NINE LIVES. ZERO REMAINING.\nRESEARCH SUBJECT LOST")+"\n%d kills • %02d:%02d • Secret %s" % [Game.kills,int(Game.elapsed)/60,int(Game.elapsed)%60,"YES" if Game.secret else "NO"]
+ next_button.visible=won and Game.level_number==1
+ panel_title.text=(("CONTAINMENT CLEARED\nLEVEL 2 UNLOCKED" if Game.level_number==1 else "REACTOR SECURED\nYOU ESCAPED!") if won else "NINE LIVES. ZERO REMAINING.\nRESEARCH SUBJECT LOST")+"\n%d kills • %02d:%02d • Secret %s" % [Game.kills,int(Game.elapsed)/60,int(Game.elapsed)%60,"YES" if Game.secret else "NO"]
 func build_touch():
  touch_layer=Control.new()
  root.add_child(touch_layer)

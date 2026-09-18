@@ -1,5 +1,6 @@
 extends Node
 signal changed
+var level_number := 1
 var restarting := false
 var skip_start_screen := false
 var player
@@ -63,3 +64,14 @@ func complete():
  finished=true
  Sound.play("elevator")
  hud.end_screen(true)
+
+func next_level():
+ if not finished or level_number!=1 or restarting: return
+ restarting=true
+ skip_start_screen=true
+ call_deferred("_load_level_two")
+func _load_level_two():
+ reset()
+ var result=get_tree().change_scene_to_file("res://scenes/levels/Reactor.tscn")
+ restarting=false
+ if result!=OK: push_error("Unable to load Reactor Depths")

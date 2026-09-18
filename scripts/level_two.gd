@@ -1,7 +1,7 @@
 extends Node3D
 const CELL=3.0
-var key_cell=Vector2(27,3)
-var exit_cell=Vector2(9,37)
+var key_cell=Vector2(26,10)
+var exit_cell=Vector2(15,37)
 var cells={}
 var blocked={}
 var nav=AStarGrid2D.new()
@@ -21,28 +21,22 @@ func location(x:int,z:int) -> Vector3:
  return Vector3(x*CELL,0,z*CELL)
 func _ready():
  Game.level=self
- Game.level_number=1
- carve(2,2,6,6)
- carve(4,7,4,10)
- carve(2,11,8,16)
- carve(9,13,12,13)
- carve(13,11,18,16)
- carve(16,6,16,10)
- carve(14,2,19,5)
- carve(20,4,23,4)
- carve(24,2,28,8)
- carve(26,9,26,20)
- carve(20,19,25,22)
- carve(16,17,16,20)
- carve(17,20,19,20)
- carve(4,17,4,24)
- carve(2,25,14,32)
- carve(9,33,9,35)
- carve(7,36,11,38)
- carve(9,15,11,15)
- carve(10,16,12,18)
+ Game.level_number=2
+ carve(12,2,18,6)
+ carve(15,7,15,11)
+ carve(10,12,20,17)
+ carve(21,14,25,14)
+ carve(24,8,28,13)
+ carve(5,14,9,14)
+ carve(2,11,5,18)
+ carve(15,18,15,24)
+ carve(8,25,22,32)
+ carve(15,33,15,35)
+ carve(12,36,18,38)
+ carve(3,19,3,21)
+ carve(2,22,6,24)
  var wall=LabVisual.wall_material()
- var floor_mat=LabVisual.material(Color("26343f"))
+ var floor_mat=LabVisual.material(Color("25362c"))
  var ceiling_mat=LabVisual.material(Color("111e2a"))
  for c in cells:
   var pos=location(c.x,c.y)
@@ -56,7 +50,7 @@ func _ready():
    var lamp=OmniLight3D.new()
    lamp.position=pos+Vector3(0,2.65,0)
    lamp.omni_range=10
-   lamp.light_color=Color("71d3d5") if c.y<24 else Color("ff405a")
+   lamp.light_color=Color("8cffa5") if c.y<24 else Color("ff9c35")
    lamp.light_energy=1.1
    add_child(lamp)
    lamps.append(lamp)
@@ -76,13 +70,12 @@ func _ready():
  nav.update()
  for z in 40:
   for x in 31: nav.set_point_solid(Vector2i(x,z),not cells.has(Vector2i(x,z)))
- spawn_door(4,8,false,false,false)
- spawn_door(4,21,true,false,false)
- var secret_door=spawn_door(9,15,false,true,false)
- secret_door.rotation.y=PI/2
- lift=spawn_door(9,35,false,false,true)
+ spawn_door(15,9,false,false,false)
+ spawn_door(15,22,true,false,false)
+ spawn_door(3,20,false,true,false)
+ lift=spawn_door(15,35,false,false,true)
  var player=preload("res://scenes/player/Player.tscn").instantiate()
- player.position=location(4,3)+Vector3(0,0.1,0)
+ player.position=location(15,3)+Vector3(0,0.1,0)
  player.rotation.y=PI
  add_child(player)
  var retro=CanvasLayer.new()
@@ -97,20 +90,19 @@ func _ready():
  retro.add_child(filter)
  var hud=preload("res://scenes/ui/HUD.tscn").instantiate()
  add_child(hud)
- for entry in [[4,5,"ammo"],[3,12,"health"],[7,15,"ammo"],[15,12,"ammo"],[18,15,"health"],[15,3,"ammo"],[27,3,"key"],[25,7,"health"],[25,19,"ammo"],[21,21,"health"],[11,17,"health"],[12,17,"ammo"],[3,24,"ammo"],[3,26,"health"],[13,26,"ammo"],[13,31,"health"],[6,30,"ammo"]]:
+ for entry in [[14,5,"ammo"],[16,5,"health"],[11,13,"ammo"],[19,16,"health"],[25,12,"ammo"],[26,10,"key"],[3,16,"health"],[4,23,"ammo"],[5,23,"health"],[15,24,"ammo"],[9,26,"ammo"],[21,26,"health"],[9,31,"health"],[21,31,"ammo"],[14,34,"ammo"]]:
   spawn_pickup(entry[0],entry[1],entry[2])
- for entry in [[4,12,false],[7,14,true],[6,15,true],[14,13,false],[17,15,true],[16,7,false],[17,3,false],[25,5,false],[27,7,true],[25,7,true],[26,15,false],[22,20,true],[23,21,true],[4,19,false],[4,23,true]]:
+ for entry in [[12,14,false],[18,15,false],[17,16,true],[25,14,true],[25,11,false],[27,9,false],[27,12,true],[4,12,true],[3,17,false],[15,19,false],[15,24,true]]:
   spawn_enemy(entry[0],entry[1],entry[2],false)
- signage("PAWCI RESEARCH DIVISION\nAUTHORIZED FELINES ONLY",4,6)
- signage("CONTAINMENT WING\nSECURITY SOUTH / RESEARCH EAST",4,16)
- signage("EXPERIMENTAL CATNIP STORAGE\nRED KEY ISSUANCE",26,8)
- signage("SUBJECTS MUST REMAIN CALM",16,16)
- signage("DO NOT OPEN\n(EVEN IF YOU ARE A CAT)",11,18)
- signage("DR. PAWCI'S PRIVATE CATNAP SUITE\nSCIENCE CAN WAIT. NAPS CANNOT.",11,17)
- signage("FREIGHT ELEVATOR // SURFACE",9,38)
- for coord in [Vector2i(2,3),Vector2i(8,12),Vector2i(13,12),Vector2i(19,3),Vector2i(28,3),Vector2i(20,21),Vector2i(2,28),Vector2i(14,29)]:
+ signage("02 // REACTOR DEPTHS\nRESTORE CLEARANCE. REACH THE SURFACE.",15,6)
+ signage("REACTOR SOUTH / KEY EAST\nSUPPLIES WEST",15,17)
+ signage("REACTOR ACCESS CARD",26,12)
+ signage("EMERGENCY SUPPLY CACHE",4,24)
+ signage("CORE GUARDIAN // STAND CLEAR",15,32)
+ signage("SURFACE LIFT // FREEDOM",15,38)
+ for coord in [Vector2i(12,3),Vector2i(18,3),Vector2i(10,12),Vector2i(20,12),Vector2i(24,8),Vector2i(28,8),Vector2i(8,28),Vector2i(22,28)]:
   prop(location(coord.x,coord.y))
- Game.message("CONTAINMENT FAILURE // FIND THE RED KEY")
+ Game.message("REACTOR DEPTHS // FIND THE RED ACCESS CARD")
 func signage(text:String,x:int,z:int):
  var sign=LabVisual.sign_text(self,text,location(x,z)+Vector3(0,2.1,1.32),26)
  sign.rotation.y=PI
@@ -158,11 +150,15 @@ func path_between(from:Vector3,to:Vector3) -> PackedVector3Array:
 func begin_arena():
  if arena_started: return
  arena_started=true
- Game.message("FINAL CONTAINMENT // CLEAR THE ELEVATOR APPROACH")
+ Game.message("REACTOR LOCKDOWN // DEFEAT THE CORE GUARDIAN")
  Sound.play("alarm")
- for entry in [[4,28,false],[9,30,false],[13,29,false],[6,27,true],[8,28,true],[11,31,true],[12,27,true],[5,31,true]]:
+ for entry in [[10,28,false],[20,28,false],[12,30,true],[18,30,true],[15,31,false],[11,27,true],[19,27,true]]:
   var enemy=spawn_enemy(entry[0],entry[1],entry[2],true)
   enemy.state="CHASE"
+  if entry[0]==15:
+   enemy.hp=175
+   enemy.visual.scale=Vector3(1.4,1.4,1.4)
+   LabVisual.sign_text(enemy,"CORE GUARDIAN",Vector3(0,1.8,0),22)
 func on_enemy_died(enemy):
  if enemy.final_guard:
   arena_left-=1
@@ -171,7 +167,7 @@ func on_enemy_died(enemy):
    for lamp in lamps:
     if lamp.position.z>70: lamp.light_color=Color("5ce7a5")
    lift.interact()
-   Game.message("CONTAINMENT WING CLEARED // ENTER THE ELEVATOR")
+   Game.message("REACTOR SECURED // TAKE THE SURFACE LIFT")
 func _process(dt):
  time+=dt
  for i in lamps.size(): lamps[i].light_energy=1.0+sin(time*9+i*17)*0.09
@@ -180,7 +176,7 @@ func _process(dt):
  if arena_clear and Game.player.position.z>108: Game.complete()
  pa_timer-=dt
  if pa_timer<=0:
-  var lines=["Attention. Containment procedures are proceeding exactly as planned.","Any resemblance between today's events and a catastrophic failure is purely coincidental.","Subjects are reminded that unauthorized scratching is prohibited.","Please remain calm. The facility is completely under control."]
+  var lines=["Reactor personnel: please stop feeding the cooling system.","The Core Guardian is not a vacuum cleaner. Do not pet it.","Subjects are reminded that unauthorized scratching is prohibited.","Please remain calm. The facility is completely under control."]
   Game.hud.subtitle("DR. PAWCI // "+lines[pa_index%lines.size()])
   pa_index+=1
   pa_timer=33
