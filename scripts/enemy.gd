@@ -40,13 +40,17 @@ func _ready():
   rat_sprite.double_sided=true
   visual.add_child(rat_sprite)
   return
- var steel=LabVisual.material(Color("91a6ac") if mouse else Color("b18c63"))
- LabVisual.box(visual,Vector3(0,0.3,0),shape.size*Vector3(1,0.65,1),steel)
- LabVisual.box(visual,Vector3(0,0.54,-0.26),Vector3(0.3,0.13,0.12),LabVisual.material(Color("ff3948"),1.5))
- for side in [-1,1]:
-  LabVisual.box(visual,Vector3(side*shape.size.x*0.48,0.15,0),Vector3(0.16,0.3,0.58),LabVisual.material(Color("18232d")))
-  if mouse: LabVisual.box(visual,Vector3(side*0.2,0.6,0.08),Vector3(0.16,0.22,0.12),steel)
- if mouse: LabVisual.box(visual,Vector3(0,0.22,0.5),Vector3(0.06,0.06,0.5),steel)
+ var rover=Sprite3D.new()
+ rover.texture=preload("res://assets/art/security-rover.png")
+ rover.pixel_size=1.4/rover.texture.get_width()
+ rover.position.y=0.38
+ rover.billboard=BaseMaterial3D.BILLBOARD_FIXED_Y
+ rover.texture_filter=BaseMaterial3D.TEXTURE_FILTER_LINEAR
+ rover.alpha_cut=SpriteBase3D.ALPHA_CUT_DISCARD
+ rover.alpha_scissor_threshold=0.15
+ rover.shaded=true
+ rover.double_sided=true
+ visual.add_child(rover)
 func can_see_player() -> bool:
  var from=global_position+Vector3.UP*0.55
  var target=Game.player.global_position+Vector3.UP*0.7

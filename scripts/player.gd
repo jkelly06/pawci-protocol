@@ -35,6 +35,19 @@ func _unhandled_input(event):
   look(event.relative)
  if event.is_action_pressed("interact"): interact()
 func interact():
+ # Allow USE to reach a nearby pickup, but never through a wall.
+ var pickup_target=null
+ var pickup_distance=2.0
+ for pickup in get_tree().get_nodes_in_group("pickups"):
+  var d=global_position.distance_to(pickup.global_position)
+  if d<pickup_distance and not pickup.collected:
+   var query=PhysicsRayQueryParameters3D.create(camera.global_position,pickup.global_position+Vector3(0,0.6,0),1)
+   if get_world_3d().direct_space_state.intersect_ray(query).is_empty():
+    pickup_target=pickup
+    pickup_distance=d
+ if pickup_target!=null:
+  pickup_target.collect()
+  return
  var nearest=null
  var distance=3.0
  for door in get_tree().get_nodes_in_group("doors"):

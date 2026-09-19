@@ -12,8 +12,12 @@ func _ready():
  LabVisual.box(self,Vector3.ZERO,Vector3(0.20,0.19,0.42),teal)
  LabVisual.box(self,Vector3(0,0.08,-0.2),Vector3(0.13,0.10,0.15),dark)
  LabVisual.box(self,Vector3(0,0.11,-0.14),Vector3(0.04,0.03,0.06),orange)
+ var fur=LabVisual.material(Color("9ca3aa"))
+ var stripe=LabVisual.material(Color("171b20"))
  for side in [-1,1]:
-  LabVisual.box(self,Vector3(side*0.16,-0.07,0.05),Vector3(0.13,0.14,0.22),orange)
+  LabVisual.box(self,Vector3(side*0.16,-0.07,0.05),Vector3(0.13,0.14,0.22),fur)
+  for band in 3:
+   LabVisual.box(self,Vector3(side*0.16,0.002,-0.025+band*0.065),Vector3(0.132,0.012,0.022),stripe)
   for toe in 3:
    LabVisual.box(self,Vector3(side*0.16+(toe-1)*0.037,-0.005,-0.07),Vector3(0.025,0.025,0.045),LabVisual.material(Color("fff2c5")))
  flash_mesh=LabVisual.box(self,Vector3(0,0.04,-0.34),Vector3(0.22,0.22,0.1),LabVisual.material(Color("ffe78c"),2))

@@ -2,7 +2,10 @@ extends Area3D
 @export_enum("health","ammo","key") var kind := "health"
 var visual: Node3D
 var time := 0.0
+var collected := false
+var full_notice := false
 func _ready():
+ add_to_group("pickups")
  collision_layer=0
  collision_mask=2
  var col=CollisionShape3D.new()
@@ -20,15 +23,28 @@ func _physics_process(dt):
  time+=dt
  visual.position.y=sin(time*3)*0.10
  visual.rotation.y+=dt
+ var touching=false
  for body in get_overlapping_bodies():
-  if body==Game.player: collect()
+  if body==Game.player:
+   touching=true
+   collect()
+ if not touching: full_notice=false
 func collect():
+ if collected or Game.finished or Game.health<=0: return
  if kind=="health":
-  if Game.health>=100: return
-  Game.health=mini(100,Game.health+25)
+  if Game.health>=100:
+   if not full_notice:
+    Game.message("HEALTH FULL // SAVE THESE TREATS FOR LATER")
+    full_notice=true
+   return
+  var restored=mini(25,100-Game.health)
+  Game.health+=restored
+  Game.message("CAT TREATS // +%d HP" % restored)
  elif kind=="ammo": Game.reserve+=24
  else: Game.red_key=true
- Game.message({"health":"CAT TREATS // +25 HP","ammo":"TUNA CELLS // +24","key":"RED KEY ACQUIRED // RETURN TO SECURITY"}[kind])
+ collected=true
+ if kind!="health":
+  Game.message({"ammo":"TUNA CELLS // +24","key":"RED KEY ACQUIRED // RETURN TO SECURITY"}[kind])
  Sound.play("pickup")
  Game.changed.emit()
  queue_free()
