@@ -1,6 +1,7 @@
 extends CharacterBody3D
 var camera: Camera3D
 var weapon
+var touch_look := Vector2.ZERO
 var touch_move := Vector2.ZERO
 var touch_fire := false
 var bob := 0.0
@@ -44,6 +45,7 @@ func interact():
  if nearest!=null: nearest.interact()
 func _physics_process(dt):
  if Game.health<=0 or Game.finished: return
+ look(touch_look*850.0*dt)
  var input=Input.get_vector("left","right","forward","back")+touch_move
  input=input.limit_length()
  var direction=global_basis*Vector3(input.x,0,input.y)

@@ -1,0 +1,20 @@
+PAWCI PROTOCOL — Visual Update
+
+UPLOAD TO YOUR EXISTING GITHUB REPOSITORY
+1. Extract this ZIP.
+2. Open jkelly06/pawci-protocol on GitHub.
+3. Choose Add file > Upload files.
+4. Drag the assets, scripts, scenes and tests folders from inside the extracted folder into GitHub.
+5. Commit changes, then wait for the Publish PAWCI PROTOCOL Action to finish.
+6. Reload the game on your phone. If the old screen remains, close the game tab and reopen it.
+
+Includes original illustrated title screen, Break Containment start button, three difficulty settings (incoming damage 60%, 100%, 140%), styled pause/results menus, health/ammo/key/enemy HUD, both existing levels, live navigation map, restart fixes and dual movement/turning sticks.
+
+The title screen appears on web launch. For native preview run Godot with -- --title.
+This update changes title artwork and UI; gameplay models and world art remain as before.
+
+Verified with Godot 4.4.1: 30 gameplay smoke checks, Level 2 transition and restart checks, dual joystick movement/turning checks, title/start/difficulty/pause checks. Not visually verified in a browser or on iPhone. Headless tests report an ObjectDB cleanup warning at exit.
+
+Art generated with the built-in image-generation tool.
+Asset: assets/art/containment-cover.png
+Prompt: Original retro science fiction cover illustration of an escaped orange laboratory cat in teal protective harness with a tuna blaster, ruined research facility, cyan containment tubes and amber emergency lighting. Cat on right, dark negative space on left. No text or UI.

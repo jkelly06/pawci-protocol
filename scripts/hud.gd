@@ -1,4 +1,7 @@
 extends CanvasLayer
+var front_end: Control
+var move_pad: Control
+var look_pad: Control
 var touch_layer: Control
 var map_view: Control
 var root: Control
@@ -43,15 +46,18 @@ func _ready():
  root.mouse_filter=Control.MOUSE_FILTER_IGNORE
  add_child(root)
  root.size=get_viewport().get_visible_rect().size
+ apply_theme()
  get_viewport().size_changed.connect(func(): root.size=get_viewport().get_visible_rect().size)
  var bar=ColorRect.new()
- bar.color=Color("10232e")
+ bar.color=Color("081b20")
  bar.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
  bar.offset_top=-58
  bar.mouse_filter=Control.MOUSE_FILTER_IGNORE
  root.add_child(bar)
+ root.add_child(preload("res://scripts/status_bar.gd").new())
  stats=label_at("",Vector2(0,1),Vector2(16,-52),22)
- objective=label_at("",Vector2(0,1),Vector2(16,-25),13)
+ stats.hide()
+ objective=label_at("",Vector2(0,1),Vector2(16,-94),13)
  label_at("PAWCI PROTOCOL   /   "+("01 CONTAINMENT" if Game.level_number==1 else "02 REACTOR DEPTHS"),Vector2.ZERO,Vector2(16,12),17)
  var help=label_at("WASD move  •  SHIFT sprint  •  SPACE jump  •  E use  •  R reload",Vector2.ZERO,Vector2(16,35),12)
  toast=label_at("",Vector2(0,0.15),Vector2(16,0),17)
@@ -105,15 +111,15 @@ func _ready():
  if OS.has_feature("web"):
   mobile=mobile or bool(JavaScriptBridge.eval("navigator.maxTouchPoints > 0"))
  if mobile:
-  help.text="LEFT PAD move  /  DRAG RIGHT look  /  MAP top right"
+  help.text="LEFT STICK move  /  RIGHT STICK turn + aim"
   build_touch()
  root.move_child(panel,-1)
- if OS.has_feature("web") and not Game.skip_start_screen:
+ if (OS.has_feature("web") or "--title" in OS.get_cmdline_user_args()) and not Game.skip_start_screen:
   get_tree().paused=true
   Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
-  panel.show()
-  panel_title.text="PAWCI PROTOCOL\nTap START GAME to play"
-  resume_button.text="START GAME"
+  front_end=preload("res://scripts/front_end.gd").new()
+  root.add_child(front_end)
+  front_end.started.connect(start_play)
  Game.skip_start_screen=false
  Game.changed.connect(refresh)
  refresh()
@@ -126,6 +132,7 @@ func _process(dt):
  hit_timer=maxf(0,hit_timer-dt)
  shade.color=Color(0.9,0.08,0.1,flash*0.65)
  crosshair.text="×" if hit_timer>0 else "+"
+ crosshair.visible=not get_tree().paused
  if not get_tree().paused:
   toast_timer-=dt
   subtitle_timer-=dt
@@ -143,31 +150,59 @@ func message(text:String):
 func subtitle(text:String):
  subtitles.text=text
  subtitle_timer=8
+func clear_touch():
+ move_id=-1
+ look_id=-1
+ if is_instance_valid(Game.player):
+  Game.player.touch_move=Vector2.ZERO
+  Game.player.touch_look=Vector2.ZERO
+  Game.player.touch_fire=false
+func _notification(what):
+ if what==NOTIFICATION_APPLICATION_FOCUS_OUT: clear_touch()
+func stick_value(point:Vector2,pad:Control) -> Vector2:
+ var value=(point-(pad.global_position+pad.size*0.5))/52.0
+ if value.length()<0.12: return Vector2.ZERO
+ return value.limit_length()
 func _input(event):
- # Release tracked fingers even when they end over a UI button.
- if event is InputEventScreenTouch and not event.pressed and is_instance_valid(Game.player):
+ if not mobile or not is_instance_valid(Game.player): return
+ # Track each finger until release, including outside the joystick or over a button.
+ if event is InputEventScreenTouch and not event.pressed:
   if event.index==move_id:
    move_id=-1
    Game.player.touch_move=Vector2.ZERO
-  if event.index==look_id: look_id=-1
+  if event.index==look_id:
+   look_id=-1
+   Game.player.touch_look=Vector2.ZERO
+  return
+ if get_tree().paused: return
+ if event is InputEventScreenTouch and event.pressed:
+  if move_id==-1 and move_pad.get_global_rect().has_point(event.position):
+   move_id=event.index
+   Game.player.touch_move=stick_value(event.position,move_pad)
+   get_viewport().set_input_as_handled()
+  elif look_id==-1 and look_pad.get_global_rect().has_point(event.position):
+   look_id=event.index
+   Game.player.touch_look=stick_value(event.position,look_pad)
+   get_viewport().set_input_as_handled()
+ elif event is InputEventScreenDrag:
+  if event.index==move_id:
+   Game.player.touch_move=stick_value(event.position,move_pad)
+   get_viewport().set_input_as_handled()
+  elif event.index==look_id:
+   Game.player.touch_look=stick_value(event.position,look_pad)
+   get_viewport().set_input_as_handled()
 func _unhandled_input(event):
  if event.is_action_pressed("pause") and Game.health>0 and not Game.finished: toggle_pause()
- if not mobile or get_tree().paused: return
- if event is InputEventScreenTouch:
-  if event.pressed:
-   if event.position.x<get_viewport().get_visible_rect().size.x*0.4 and move_id==-1:
-    move_id=event.index
-    move_origin=event.position
-   elif look_id==-1: look_id=event.index
-  else:
-   if event.index==move_id:
-    move_id=-1
-    Game.player.touch_move=Vector2.ZERO
-   if event.index==look_id: look_id=-1
- elif event is InputEventScreenDrag:
-  if event.index==move_id: Game.player.touch_move=((event.position-move_origin)/65).limit_length()
-  elif event.index==look_id: Game.player.look(event.relative*1.8)
+func start_play():
+ if is_instance_valid(front_end):
+  front_end.queue_free()
+  front_end=null
+ get_tree().paused=false
+ panel.hide()
+ clear_touch()
+ Input.mouse_mode=Input.MOUSE_MODE_VISIBLE if mobile else Input.MOUSE_MODE_CAPTURED
 func toggle_pause():
+ if is_instance_valid(front_end): return
  get_tree().paused=not get_tree().paused
  panel.visible=get_tree().paused
  panel_title.text="PAWCI PROTOCOL\nPAUSED"
@@ -175,9 +210,9 @@ func toggle_pause():
  move_id=-1
  look_id=-1
  Input.mouse_mode=Input.MOUSE_MODE_VISIBLE if get_tree().paused or mobile else Input.MOUSE_MODE_CAPTURED
- Game.player.touch_fire=false
- Game.player.touch_move=Vector2.ZERO
+ clear_touch()
 func end_screen(won:bool):
+ clear_touch()
  get_tree().paused=true
  Input.mouse_mode=Input.MOUSE_MODE_VISIBLE
  panel.show()
@@ -189,20 +224,19 @@ func build_touch():
  root.add_child(touch_layer)
  touch_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
  touch_layer.mouse_filter=Control.MOUSE_FILTER_IGNORE
- # Controls sit inward, around the middle height, leaving the reticle clear.
  var actions=["FIRE","USE","RELOAD","JUMP","PAUSE"]
- var offsets=[Vector2(0,0),Vector2(96,0),Vector2(0,62),Vector2(96,62),Vector2(48,124)]
+ var offsets=[Vector2(-88,0),Vector2(4,0),Vector2(-88,56),Vector2(4,56),Vector2(-42,112)]
  for i in actions.size():
   var button=Button.new()
   touch_layer.add_child(button)
   button.text=actions[i]
-  button.anchor_left=0.62
-  button.anchor_top=0.45
-  button.anchor_right=0.62
-  button.anchor_bottom=0.45
-  button.position=Vector2(root.size.x*0.62,root.size.y*0.45)+offsets[i]
-  button.size=Vector2(90,54)
-  button.modulate=Color(1,1,1,0.8)
+  button.anchor_left=0.5
+  button.anchor_right=0.5
+  button.anchor_top=0.57
+  button.anchor_bottom=0.57
+  button.position=Vector2(root.size.x*0.5,root.size.y*0.57)+offsets[i]
+  button.size=Vector2(84,48)
+  button.modulate=Color(1,1,1,0.85)
   if i==0:
    button.button_down.connect(func(): Game.player.touch_fire=true)
    button.button_up.connect(func(): Game.player.touch_fire=false)
@@ -213,12 +247,43 @@ func build_touch():
     if Game.player.is_on_floor(): Game.player.velocity.y=6
    )
   else: button.pressed.connect(toggle_pause)
- var pad=preload("res://scripts/minimap.gd").new()
- pad.joystick=true
+ move_pad=make_stick(0.25,false)
+ look_pad=make_stick(0.75,true)
+func make_stick(x:float,turning:bool) -> Control:
+ var pad=preload("res://scripts/touch_stick.gd").new()
+ pad.turning=turning
  touch_layer.add_child(pad)
- pad.anchor_left=0.28
- pad.anchor_right=0.28
- pad.anchor_top=0.59
- pad.anchor_bottom=0.59
- pad.position=Vector2(root.size.x*0.28-60,root.size.y*0.59-60)
- pad.size=Vector2(120,120)
+ pad.anchor_left=x
+ pad.anchor_right=x
+ pad.anchor_top=0.67
+ pad.anchor_bottom=0.67
+ pad.position=Vector2(root.size.x*x-66,root.size.y*0.67-66)
+ pad.size=Vector2(132,132)
+ return pad
+
+func apply_theme():
+ var theme=Theme.new()
+ theme.default_font_size=16
+ for state in ["normal","hover","pressed","focus"]:
+  var box=StyleBoxFlat.new()
+  box.bg_color=Color("102c32") if state=="normal" else Color("28535a")
+  box.border_color=Color("e3aa60") if state=="focus" else Color("668e89")
+  box.set_border_width_all(2 if state=="focus" else 1)
+  box.content_margin_top=10
+  box.content_margin_bottom=10
+  box.content_margin_left=14
+  box.content_margin_right=14
+  theme.set_stylebox(state,"Button",box)
+  theme.set_stylebox(state,"OptionButton",box)
+ theme.set_color("font_color","Button",Color("edf3dd"))
+ theme.set_color("font_color","OptionButton",Color("edf3dd"))
+ var panel_style=StyleBoxFlat.new()
+ panel_style.bg_color=Color(0.025,0.075,0.09,0.98)
+ panel_style.border_color=Color("e3aa60")
+ panel_style.set_border_width_all(2)
+ panel_style.content_margin_left=24
+ panel_style.content_margin_right=24
+ panel_style.content_margin_top=22
+ panel_style.content_margin_bottom=22
+ theme.set_stylebox("panel","PanelContainer",panel_style)
+ root.theme=theme

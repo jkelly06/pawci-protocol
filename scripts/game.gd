@@ -1,5 +1,6 @@
 extends Node
 signal changed
+var difficulty := 1
 var level_number := 1
 var restarting := false
 var skip_start_screen := false
@@ -54,7 +55,8 @@ func message(s: String):
  if is_instance_valid(hud): hud.message(s)
 func hurt(amount: int):
  if health <= 0 or finished: return
- health=maxi(0,health-amount)
+ var scale=[0.6,1.0,1.4][difficulty]
+ health=maxi(0,health-maxi(1,int(round(amount*scale))))
  Sound.play("damage")
  hud.flash=0.5
  changed.emit()
