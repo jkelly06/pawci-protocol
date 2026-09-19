@@ -9,6 +9,8 @@ var stun := 0.0
 var route_time := 0.0
 var route := PackedVector3Array()
 var visual: Node3D
+var rat_sprite: Sprite3D
+var scurry_time := 0.0
 var home := Vector3.ZERO
 var patrol_phase := 0.0
 func _ready():
@@ -25,6 +27,19 @@ func _ready():
  add_child(col)
  visual=Node3D.new()
  add_child(visual)
+ if mouse:
+  rat_sprite=Sprite3D.new()
+  rat_sprite.texture=preload("res://assets/art/rat.png")
+  rat_sprite.pixel_size=1.15/rat_sprite.texture.get_height()
+  rat_sprite.position.y=0.50
+  rat_sprite.billboard=BaseMaterial3D.BILLBOARD_FIXED_Y
+  rat_sprite.texture_filter=BaseMaterial3D.TEXTURE_FILTER_LINEAR
+  rat_sprite.alpha_cut=SpriteBase3D.ALPHA_CUT_DISCARD
+  rat_sprite.alpha_scissor_threshold=0.15
+  rat_sprite.shaded=true
+  rat_sprite.double_sided=true
+  visual.add_child(rat_sprite)
+  return
  var steel=LabVisual.material(Color("91a6ac") if mouse else Color("b18c63"))
  LabVisual.box(visual,Vector3(0,0.3,0),shape.size*Vector3(1,0.65,1),steel)
  LabVisual.box(visual,Vector3(0,0.54,-0.26),Vector3(0.3,0.13,0.12),LabVisual.material(Color("ff3948"),1.5))
@@ -75,6 +90,10 @@ func _physics_process(dt):
    Sound.play("attack")
  if not is_on_floor(): velocity.y-=20*dt
  move_and_slide()
+ if mouse and is_instance_valid(rat_sprite):
+  var moving=Vector2(velocity.x,velocity.z).length()>0.2
+  scurry_time+=dt*(18.0 if moving else 3.0)
+  rat_sprite.position.y=0.50+abs(sin(scurry_time))*(0.025 if moving else 0.003)
 func take_damage(amount: int):
  if hp<=0: return
  hp-=amount

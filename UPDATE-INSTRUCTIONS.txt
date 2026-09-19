@@ -1,0 +1,10 @@
+PAWCI — Realistic Rats
+
+Extract the ZIP. Upload the assets and scripts folders to the root of your existing GitHub repository, then commit. Wait for the deployment Action to succeed and reload your game.
+
+Replaces the small robotic mouse enemies in both levels with detailed brown-grey rat sprites: fur, ears, whiskers, paws, teeth and tail. Adds subtle scurry movement. Existing damage, collision and chase behavior are preserved. Drones remain unchanged.
+
+These are camera-facing 2D sprites, not fully animated 3D rat models. Native Godot import and all 30 gameplay smoke checks passed. Browser/iPhone visuals have not been tested directly.
+
+Generated asset: assets/art/rat.png
+Built-in image-generation prompt: A single realistic brown-grey sewer rat scurrying toward the camera, full body and long tail, natural anatomy, coarse detailed fur, whiskers, pink ears and paws, slightly open mouth, transparent background, no armor, no text.
