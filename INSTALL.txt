@@ -1,0 +1,3 @@
+Extract this ZIP. Upload the web folder AND export_presets.cfg to the root of jkelly06/pawci-protocol. Commit. Wait for Actions to finish. Open https://jkelly06.github.io/pawci-protocol/?version=4 . The bottom-right corner must say RATS + ROVER V4.
+
+This changes the web loader to request a fresh game pack on each launch. Existing gameplay and art are unchanged. The currently published pack was downloaded and instantiated in native Godot: all 15 initial enemies use Sprite3D, with no box meshes. Loader cache-bypass logic passed a JavaScript check. A browser render was not verified.
